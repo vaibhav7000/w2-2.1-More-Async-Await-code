@@ -1,6 +1,6 @@
 // run `node index.js` in the terminal
 
-console.log(`Hello Node.js v${process.versions.node}!`);
+const fs = require("fs");
 
 
 function sqaure(n) {
@@ -87,3 +87,94 @@ console.log(sqaure(1), sqaure(2));
 // Using event-loop the main thread picks up the callback functions from the callback queue and then runs according to that
 
 // going away from the main thread means we will be approaching to the asynchronous nature of JS
+
+// Promises will be used to pass callback to the already implemented asynchronous function rather using the callback syntax 
+// Most of the time we will be using the already implemented asynchronous functions
+
+
+// we be writing "copyright Vaibhav Chawla" to the a.txt after the data present in it
+
+// approach 1 callback syntax
+function readAndWriteCopyRight(path, writeData, successCallback, errorCallback) {
+    fs.readFile(path, "utf-8", function(err, data) {
+        if(!err) {
+            const finalData = data + " " + writeData
+            console.log(finalData)
+            successCallback(path, finalData) // here will be writing the final data
+            return
+        }
+
+        errorCallback(err);
+    }); 
+}
+
+readAndWriteCopyRight("./a.txt", "CopyRight Vaibhav Chawla", (path, finalData) => {
+    // will be writing data into the file
+    fs.writeFile(path, finalData, {
+        encoding: "utf-8",
+        flag: "a",  // flag: "a" -> means does not clear the data already present rather append that with the previous one
+    }, function(err) {
+        if(err) {
+            console.log("error occured while writing the data");
+        }
+    })
+}, function(err) {
+    console.log(err);
+})
+
+
+// we will never ever create our asynchronous function rather we have simplified the passing of the callback function to these functions so that they will looks cleaner
+
+// approach 2 using .then() and .catch() to pass the callback 
+
+function readAndWriteFilePromise(path, writeData) {
+    return new Promise(function(resolve, reject) {
+        fs.readFile(path, "utf-8", function(err, data) {
+            if(!err) {
+                const finalData = data + " " + writeData;
+                fs.writeFile(path, finalData, {
+                    encoding: "utf-8",
+                    flag: "a",
+                }, function(err) {
+                    if(err) {
+                        reject({
+                            err,
+                            fromWhere: "This comes from the write file",
+                        })
+                        return
+                    }
+
+                    resolve({
+                        data: finalData, 
+                        fromWhere: "No error came"
+                    })
+                })
+
+                return
+            }
+
+            reject({
+                err,
+                fromWhere: "this error is from the read file"
+            });
+        })
+    })
+}
+
+readAndWriteFilePromise("./a.txt", "CopyRight Vaibhav Chawla").then(function(data) {
+    console.log("This will be an object")
+    console.log(data);
+}).catch(function(err) {
+    console.log(err);
+})
+
+// approach 3 using the async await syntax rather then using .then and .catch, when using the async await we have to wrap the promised version of function into new function, its the syntax
+
+async function main(path, finalData) {
+    try {
+        const data = await readAndWriteFilePromise("./a.txt", "CopyRight Vaibhav Chawla");
+        console.log(data);
+    } catch(err) {
+        console.log(err);
+    }
+}
